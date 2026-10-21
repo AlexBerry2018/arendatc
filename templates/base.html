@@ -1,0 +1,72 @@
+{% load static arenda %}<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}АрендаТЦ{% endblock %} · АрендаТЦ</title>
+  <link href="{% static 'vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="{% static 'css/app.css' %}" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg app-nav">
+  <div class="container-xl">
+    <a class="navbar-brand" href="{% url 'home' %}"><span class="brand-mark">А</span> АрендаТЦ</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-label="Меню">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="nav">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link" href="{% url 'catalog:list' %}">Каталог площадей</a></li>
+        {% if user.is_authenticated %}
+          {% if user.tenant %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'leasing:cabinet' %}">Мой кабинет</a></li>
+          {% endif %}
+          {% if user.role == 'manager' or user.role == 'director' or user.role == 'admin' or user.is_superuser %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'leasing:applications' %}">Заявки</a></li>
+          {% endif %}
+          {% if user.is_staff_role %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'leasing:contracts' %}">Договоры</a></li>
+          {% endif %}
+          {% if user.role == 'accountant' or user.role == 'director' or user.role == 'admin' or user.is_superuser %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'finance:home' %}">Начисления</a></li>
+          {% endif %}
+          {% if user.is_staff_role %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}">Отчёты</a></li>
+          {% endif %}
+          {% if user.is_staff %}
+            <li class="nav-item"><a class="nav-link" href="{% url 'admin:index' %}">Админка</a></li>
+          {% endif %}
+        {% endif %}
+      </ul>
+      <div class="d-flex align-items-center gap-2">
+        {% if user.is_authenticated %}
+          <span class="nav-user">{{ user.tenant.legal_name|default:user.get_full_name|default:user.username }}
+            <small>{{ user.get_role_display }}</small></span>
+          <form method="post" action="{% url 'logout' %}">{% csrf_token %}
+            <button class="btn btn-sm btn-outline-light">Выйти</button>
+          </form>
+        {% else %}
+          <a class="btn btn-sm btn-outline-light" href="{% url 'login' %}">Войти</a>
+          <a class="btn btn-sm btn-light" href="{% url 'register' %}">Регистрация арендатора</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</nav>
+
+<main class="container-xl py-4">
+  {% for m in messages %}
+    <div class="alert alert-{% if m.tags == 'error' %}danger{% else %}{{ m.tags }}{% endif %} alert-dismissible fade show" role="alert">
+      {{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+    </div>
+  {% endfor %}
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="container-xl pb-4 text-secondary small">
+  АрендаТЦ · MVP учебного проекта · <a href="{% url 'api-docs' %}">REST API</a>
+</footer>
+<script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

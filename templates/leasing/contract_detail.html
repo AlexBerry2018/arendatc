@@ -1,0 +1,135 @@
+{% extends "base.html" %}{% load arenda %}
+{% block title %}Договор {{ c.number }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
+  <div>
+    <h1 class="h3 page-title mb-1">Договор {{ c.number }}</h1>
+    <div class="text-secondary">{{ c.tenant.legal_name }} · помещение {{ c.premises.code }}, {{ c.premises.floor }}</div>
+  </div>
+  <span class="badge fs-6 text-bg-{{ c.status|badge }}">{{ c.get_status_display }}</span>
+</div>
+
+{% if c.return_comment %}<div class="alert alert-warning"><strong>Комментарий:</strong> {{ c.return_comment }}</div>{% endif %}
+
+<div class="row g-3">
+  <div class="col-lg-8">
+    {% if version %}
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="small text-secondary">Версия {{ version.version_no }} от {{ version.created_at|date:"d.m.Y H:i" }} · SHA-256 <span class="hash">{{ version.sha256|truncatechars:20 }}</span></div>
+        <a class="btn btn-sm btn-outline-primary" target="_blank" href="{% url 'leasing:contract_document' c.pk %}">Печатная форма</a>
+      </div>
+      <div class="contract-paper">{{ version.text_html|safe }}</div>
+    {% endif %}
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card mb-3">
+      <div class="card-header">Условия</div>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item d-flex justify-content-between"><span>Срок</span><span>{{ c.date_from|date:"d.m.Y" }} — {{ c.date_to|date:"d.m.Y" }}</span></li>
+        <li class="list-group-item d-flex justify-content-between"><span>Площадь</span><span>{{ c.area_m2|num }} м²</span></li>
+        <li class="list-group-item d-flex justify-content-between"><span>Аренда в месяц</span><span>{{ c.monthly_rent|rub }}</span></li>
+        <li class="list-group-item d-flex justify-content-between"><span>Эксплуатация в месяц</span><span>{{ c.monthly_service|rub }}</span></li>
+        <li class="list-group-item d-flex justify-content-between"><span>Обеспечительный платёж</span><span>{{ c.deposit_rub|rub }}</span></li>
+        <li class="list-group-item d-flex justify-content-between"><span>Пени</span><span>{{ c.penalty_pct|num }}% в день</span></li>
+        {% if booking %}<li class="list-group-item d-flex justify-content-between"><span>Бронь</span>
+          <span>{% if booking.is_active %}до {{ booking.expires_at|date:"d.m.Y H:i" }}{% else %}снята{% endif %}</span></li>{% endif %}
+      </ul>
+    </div>
+
+    {% if can_edit %}
+    <div class="card mb-3">
+      <div class="card-header">Изменить условия черновика</div>
+      <div class="card-body">
+        <form method="post" action="{% url 'leasing:contract_action' c.pk 'terms' %}">{% csrf_token %}
+          {% with form=terms_form %}{% include "_form_fields.html" %}{% endwith %}
+          <button class="btn btn-outline-primary btn-sm w-100">Сохранить как новую версию</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card mb-3">
+      <div class="card-header">Маршрут согласования</div>
+      <div class="card-body d-grid gap-2">
+        <div class="signature-box">
+          <div class="fw-semibold">1. Менеджер по аренде</div>
+          <div>{{ c.created_by.get_full_name|default:c.created_by.username }} — сформировал договор</div>
+        </div>
+        <div class="signature-box">
+          <div class="fw-semibold">2. Руководитель</div>
+          {% if c.director_signature %}
+            <div>{{ c.approved_by.get_full_name|default:c.approved_by.username }}, {{ c.director_signed_at|date:"d.m.Y H:i" }}</div>
+            <div class="hash">ЭП: {{ c.director_signature }}</div>
+          {% else %}<div class="text-secondary">ожидает утверждения</div>{% endif %}
+        </div>
+        <div class="signature-box">
+          <div class="fw-semibold">3. Арендатор</div>
+          {% if c.tenant_signature %}
+            <div>{{ c.tenant.legal_name }}, {{ c.tenant_signed_at|date:"d.m.Y H:i" }}</div>
+            <div class="hash">ЭП: {{ c.tenant_signature }}</div>
+          {% else %}<div class="text-secondary">ожидает подписи</div>{% endif %}
+        </div>
+        <div class="small text-secondary">Электронная подпись в MVP имитируется хешем SHA-256 от версии договора, подписанта и времени.</div>
+
+        {% if can_send %}
+          <form method="post" action="{% url 'leasing:contract_action' c.pk 'send' %}">{% csrf_token %}
+            <button class="btn btn-primary w-100">Отправить на утверждение</button></form>
+        {% endif %}
+        {% if can_approve %}
+          <form method="post" action="{% url 'leasing:contract_action' c.pk 'approve' %}">{% csrf_token %}
+            <button class="btn btn-primary w-100">Утвердить и подписать ЭП</button></form>
+          <form method="post" action="{% url 'leasing:contract_action' c.pk 'return' %}" class="mt-1">{% csrf_token %}
+            <textarea class="form-control form-control-sm mb-1" name="comment" rows="2" placeholder="Что исправить" required></textarea>
+            <button class="btn btn-outline-danger btn-sm w-100">Вернуть на доработку</button></form>
+        {% endif %}
+        {% if can_sign %}
+          <form method="post" action="{% url 'leasing:contract_action' c.pk 'sign' %}">{% csrf_token %}
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="agree" required>
+              <label class="form-check-label small" for="agree">С условиями договора ознакомлен и согласен</label>
+            </div>
+            <button class="btn btn-primary w-100">Подписать договор ЭП</button></form>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if can_terminate %}
+    <div class="card mb-3">
+      <div class="card-header">Расторжение</div>
+      <div class="card-body">
+        <form method="post" action="{% url 'leasing:contract_action' c.pk 'terminate' %}">{% csrf_token %}
+          {% with form=terminate_form %}{% include "_form_fields.html" %}{% endwith %}
+          <button class="btn btn-outline-danger btn-sm w-100" onclick="return confirm('Расторгнуть договор? Действие необратимо.')">Расторгнуть договор</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if invoices %}
+    <div class="card mb-3">
+      <div class="card-header">Счета по договору</div>
+      <ul class="list-group list-group-flush">
+        {% for i in invoices %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <a href="{% url 'finance:invoice' i.pk %}">{% if i.kind == "deposit" %}Обеспечение{% else %}{{ i.period|date:"m.Y" }}{% endif %}</a>
+            <span class="num">{{ i.total|rub }} <span class="badge text-bg-{{ i.status|badge }}">{{ i.get_status_display }}</span></span>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {% if versions|length > 1 %}
+    <div class="card">
+      <div class="card-header">Версии</div>
+      <ul class="list-group list-group-flush">
+        {% for v in versions %}
+          <li class="list-group-item small"><a target="_blank" href="{% url 'leasing:contract_document' c.pk %}?v={{ v.version_no }}">Версия {{ v.version_no }}</a> · {{ v.created_at|date:"d.m.Y H:i" }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

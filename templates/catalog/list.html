@@ -1,0 +1,111 @@
+{% extends "base.html" %}{% load arenda %}
+{% block title %}Каталог площадей{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-end mb-3 gap-2">
+  <div>
+    <h1 class="h3 page-title mb-1">Торговые площади</h1>
+    <div class="text-secondary">Найдено помещений: {{ premises|length }}</div>
+  </div>
+  <div class="legend">
+    <span><i style="background:var(--plan-free)"></i>Свободно</span>
+    <span><i style="background:var(--plan-booked)"></i>Забронировано</span>
+    <span><i style="background:var(--plan-leased)"></i>Сдано</span>
+    <span><i style="background:var(--plan-repair)"></i>Ремонт</span>
+  </div>
+</div>
+
+<div class="row g-3">
+  <aside class="col-lg-3">
+    <form class="card" method="get">
+      <div class="card-header">Фильтры</div>
+      <div class="card-body">
+        <div class="mb-2">
+          <label class="form-label small" for="f-floor">Этаж</label>
+          <select class="form-select form-select-sm" id="f-floor" name="floor">
+            <option value="">Все этажи</option>
+            {% for f in floors %}<option value="{{ f.number }}" {% if filters.floor == f.number|stringformat:"s" %}selected{% endif %}>{{ f }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="mb-2">
+          <label class="form-label small" for="f-type">Тип</label>
+          <select class="form-select form-select-sm" id="f-type" name="type">
+            <option value="">Любой</option>
+            {% for t in types %}<option value="{{ t.pk }}" {% if filters.type == t.pk|stringformat:"s" %}selected{% endif %}>{{ t }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="row g-2 mb-2">
+          <div class="col-6"><label class="form-label small" for="f-amin">Площадь от, м²</label>
+            <input class="form-control form-control-sm" id="f-amin" name="area_min" inputmode="decimal" value="{{ filters.area_min|default_if_none:'' }}"></div>
+          <div class="col-6"><label class="form-label small" for="f-amax">до, м²</label>
+            <input class="form-control form-control-sm" id="f-amax" name="area_max" inputmode="decimal" value="{{ filters.area_max|default_if_none:'' }}"></div>
+        </div>
+        <div class="mb-2"><label class="form-label small" for="f-price">Ставка до, ₽/м² в месяц</label>
+          <input class="form-control form-control-sm" id="f-price" name="price_max" inputmode="decimal" value="{{ filters.price_max|default_if_none:'' }}"></div>
+        <div class="mb-1 small fw-semibold">Свободно на период</div>
+        <div class="row g-2 mb-2">
+          <div class="col-6"><input class="form-control form-control-sm" type="date" name="period_from" aria-label="с" value="{{ filters.period_from|date:'Y-m-d' }}"></div>
+          <div class="col-6"><input class="form-control form-control-sm" type="date" name="period_to" aria-label="по" value="{{ filters.period_to|date:'Y-m-d' }}"></div>
+        </div>
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" name="only_free" value="1" id="f-free" {% if filters.only_free %}checked{% endif %}>
+          <label class="form-check-label small" for="f-free">Только свободные сейчас</label>
+        </div>
+        <button class="btn btn-primary btn-sm w-100">Показать</button>
+        <a class="btn btn-link btn-sm w-100" href="{% url 'catalog:list' %}">Сбросить</a>
+      </div>
+    </form>
+  </aside>
+
+  <section class="col-lg-9">
+    {% if plan_floor %}
+    <div class="plan-wrap mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="fw-semibold">План: {{ plan_floor }}</div>
+        <div class="btn-group btn-group-sm" role="group" aria-label="Этажи">
+          {% for f in floors %}
+            <a class="btn {% if f.pk == plan_floor.pk %}btn-primary{% else %}btn-outline-primary{% endif %}" href="{% query_with floor=f.number %}">{{ f.number }}</a>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="plan">
+        <svg viewBox="0 0 {{ plan_floor.plan_width }} {{ plan_floor.plan_height }}" role="img" aria-label="План этажа {{ plan_floor.number }}">
+          <rect class="corridor" x="0" y="0" width="{{ plan_floor.plan_width }}" height="{{ plan_floor.plan_height }}" rx="14"/>
+          <text class="corridor-label" x="{{ plan_floor.plan_width|add:'-24' }}" y="{{ plan_floor.plan_height|add:'-18' }}" text-anchor="end">ТОРГОВАЯ ГАЛЕРЕЯ</text>
+          {% for p in plan_premises %}
+            <a class="room {{ p.status }}{% if p.pk not in matched_ids %} dimmed{% endif %}" href="{% url 'catalog:detail' p.pk %}">
+              <title>{{ p.code }} · {{ p.type }} · {{ p.area_m2|num }} м² · {{ p.get_status_display }}</title>
+              <rect x="{{ p.plan_x }}" y="{{ p.plan_y }}" width="{{ p.plan_w }}" height="{{ p.plan_h }}" rx="8"/>
+              <text x="{{ p.plan_x|add:'12' }}" y="{{ p.plan_y|add:'26' }}">{{ p.code }}</text>
+              <text class="sub" x="{{ p.plan_x|add:'12' }}" y="{{ p.plan_y|add:'44' }}">{{ p.area_m2|floatformat:0 }} м²</text>
+            </a>
+          {% endfor %}
+        </svg>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead><tr><th>Помещение</th><th>Этаж</th><th>Тип</th><th class="num">Площадь</th><th class="num">Ставка</th><th class="num">В месяц</th><th>Статус</th></tr></thead>
+          <tbody>
+          {% for p in premises %}
+            <tr>
+              <td><a class="fw-semibold" href="{% url 'catalog:detail' p.pk %}">{{ p.code }}</a></td>
+              <td>{{ p.floor.number }}</td>
+              <td>{{ p.type }}</td>
+              <td class="num">{{ p.area_m2|num }} м²</td>
+              <td class="num">{{ p.rate_rub_m2|rub }}</td>
+              <td class="num">{{ p.monthly_rent|rub }}</td>
+              <td><span class="badge text-bg-{{ p.status|badge }}">{{ p.get_status_display }}</span></td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="7" class="text-center text-secondary py-4">По заданным условиям помещений нет. Попробуйте изменить фильтры.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

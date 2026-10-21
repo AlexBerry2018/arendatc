@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Не найдено{% endblock %}
+{% block content %}
+<div class="text-center py-5">
+  <h1 class="h3 page-title">Страница не найдена</h1>
+  <a class="btn btn-primary" href="{% url 'catalog:list' %}">К каталогу</a>
+</div>
+{% endblock %}

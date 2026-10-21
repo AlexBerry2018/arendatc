@@ -1,0 +1,18 @@
+<!doctype html>{% load static %}
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Договор {{ c.number }} · версия {{ version.version_no }}</title>
+  <link href="{% static 'css/app.css' %}" rel="stylesheet">
+  <style>body{background:#fff;max-width:820px;margin:2rem auto;padding:0 1rem}</style>
+</head>
+<body>
+  <p class="no-print"><button onclick="window.print()">Печать / сохранить в PDF</button></p>
+  <div class="contract-paper">{{ version.text_html|safe }}
+    <hr>
+    <p style="font-size:.85rem">Версия {{ version.version_no }} · SHA-256: <span class="hash">{{ version.sha256 }}</span></p>
+    {% if c.director_signature %}<p style="font-size:.85rem">Подпись Арендодателя: <span class="hash">{{ c.director_signature }}</span> ({{ c.director_signed_at|date:"d.m.Y H:i" }})</p>{% endif %}
+    {% if c.tenant_signature %}<p style="font-size:.85rem">Подпись Арендатора: <span class="hash">{{ c.tenant_signature }}</span> ({{ c.tenant_signed_at|date:"d.m.Y H:i" }})</p>{% endif %}
+  </div>
+</body>
+</html>

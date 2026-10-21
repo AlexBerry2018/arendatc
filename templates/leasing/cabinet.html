@@ -1,0 +1,73 @@
+{% extends "base.html" %}{% load arenda %}
+{% block title %}Кабинет арендатора{% endblock %}
+{% block content %}
+<h1 class="h3 page-title mb-1">{{ tenant.legal_name }}</h1>
+<div class="text-secondary mb-3">ИНН {{ tenant.inn }} · ОГРН {{ tenant.ogrn }}</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-md-4"><div class="kpi"><div class="label">Действующих договоров</div>
+    <div class="value">{{ active_count }}</div></div></div>
+  <div class="col-md-4"><div class="kpi"><div class="label">К оплате</div>
+    <div class="value">{{ debt|rub }}</div></div></div>
+  <div class="col-md-4"><div class="kpi"><div class="label">Просрочено</div>
+    <div class="value {% if overdue %}text-danger{% endif %}">{{ overdue|rub }}</div>
+    {% if overdue %}<div class="hint">Начисляются пени по условиям договора</div>{% endif %}</div></div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-header">Договоры</div>
+  <div class="table-responsive"><table class="table align-middle mb-0">
+    <thead><tr><th>Номер</th><th>Помещение</th><th>Срок</th><th class="num">Аренда в месяц</th><th>Статус</th><th></th></tr></thead>
+    <tbody>
+    {% for c in contracts %}
+      <tr>
+        <td>{{ c.number }}</td><td>{{ c.premises.code }}</td>
+        <td>{{ c.date_from|date:"d.m.Y" }} — {{ c.date_to|date:"d.m.Y" }}</td>
+        <td class="num">{{ c.monthly_rent|rub }}</td>
+        <td><span class="badge text-bg-{{ c.status|badge }}">{{ c.get_status_display }}</span></td>
+        <td class="text-end">{% if c.status != "draft" and c.status != "approval" %}
+          <a class="btn btn-sm {% if c.status == 'awaiting_signature' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="{% url 'leasing:contract' c.pk %}">
+            {% if c.status == "awaiting_signature" %}Подписать{% else %}Открыть{% endif %}</a>{% else %}<span class="small text-secondary">готовится</span>{% endif %}</td>
+      </tr>
+    {% empty %}<tr><td colspan="6" class="text-secondary">Договоров пока нет.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-header d-flex justify-content-between"><span>Заявки</span><a class="small" href="{% url 'catalog:list' %}">Подать новую →</a></div>
+  <div class="table-responsive"><table class="table align-middle mb-0">
+    <thead><tr><th>№</th><th>Помещение</th><th>Период</th><th>Бронь до</th><th>Статус</th></tr></thead>
+    <tbody>
+    {% for a in applications %}
+      <tr>
+        <td>{{ a.pk }}</td><td>{{ a.premises.code }}</td>
+        <td>{{ a.lease_from|date:"d.m.Y" }} — {{ a.lease_to|date:"d.m.Y" }}</td>
+        <td>{% if a.booking.is_active %}{{ a.booking.expires_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</td>
+        <td><span class="badge text-bg-{{ a.status|badge }}">{{ a.get_status_display }}</span>
+          {% if a.reject_reason %}<div class="small text-secondary">{{ a.reject_reason }}</div>{% endif %}</td>
+      </tr>
+    {% empty %}<tr><td colspan="5" class="text-secondary">Заявок нет.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</div>
+
+<div class="card">
+  <div class="card-header">Счета</div>
+  <div class="table-responsive"><table class="table align-middle mb-0">
+    <thead><tr><th>Счёт</th><th>Назначение</th><th>Оплатить до</th><th class="num">Сумма</th><th class="num">Долг</th><th>Статус</th></tr></thead>
+    <tbody>
+    {% for i in invoices %}
+      <tr>
+        <td><a href="{% url 'finance:invoice' i.pk %}">{{ i.number }}</a></td>
+        <td>{% if i.kind == "deposit" %}Обеспечительный платёж{% else %}Аренда за {{ i.period|date:"F Y"|lower }}{% endif %}</td>
+        <td class="{% if i.is_overdue %}text-danger fw-semibold{% endif %}">{{ i.due_date|date:"d.m.Y" }}</td>
+        <td class="num">{{ i.total|rub }}</td>
+        <td class="num">{{ i.debt|rub }}</td>
+        <td><span class="badge text-bg-{{ i.status|badge }}">{{ i.get_status_display }}</span></td>
+      </tr>
+    {% empty %}<tr><td colspan="6" class="text-secondary">Счетов нет.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endblock %}

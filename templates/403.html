@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Нет доступа{% endblock %}
+{% block content %}
+<div class="text-center py-5">
+  <h1 class="h3 page-title">Нет доступа</h1>
+  <p class="text-secondary">{{ exception|default:"Этот раздел недоступен для вашей роли." }}</p>
+  <a class="btn btn-primary" href="{% url 'home' %}">На главную</a>
+</div>
+{% endblock %}

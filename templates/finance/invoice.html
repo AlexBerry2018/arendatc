@@ -1,0 +1,41 @@
+{% extends "base.html" %}{% load arenda %}
+{% block title %}Счёт {{ i.number }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-8">
+  <div class="card"><div class="card-body p-4">
+    <div class="d-flex justify-content-between align-items-start">
+      <div>
+        <h1 class="h4 page-title mb-1">Счёт № {{ i.number }}</h1>
+        <div class="text-secondary">от {{ i.created_at|date:"d.m.Y" }} · по договору {{ i.contract.number }}</div>
+      </div>
+      <span class="badge fs-6 text-bg-{{ i.status|badge }}">{{ i.get_status_display }}</span>
+    </div>
+    <dl class="row mt-3 mb-0">
+      <dt class="col-sm-4">Плательщик</dt><dd class="col-sm-8">{{ i.contract.tenant.legal_name }}, ИНН {{ i.contract.tenant.inn }}</dd>
+      <dt class="col-sm-4">Помещение</dt><dd class="col-sm-8">{{ i.contract.premises.code }}</dd>
+      <dt class="col-sm-4">Оплатить до</dt><dd class="col-sm-8 {% if i.is_overdue %}text-danger fw-semibold{% endif %}">{{ i.due_date|date:"d.m.Y" }}{% if i.is_overdue %} — просрочен{% endif %}</dd>
+    </dl>
+    <table class="table mt-3">
+      <thead><tr><th>Наименование</th><th class="num">Сумма</th></tr></thead>
+      <tbody>
+        {% if i.kind == "deposit" %}
+          <tr><td>Обеспечительный платёж по договору {{ i.contract.number }}</td><td class="num">{{ i.rent_amount|rub }}</td></tr>
+        {% else %}
+          <tr><td>Арендная плата за {{ i.period|date:"F Y"|lower }}</td><td class="num">{{ i.rent_amount|rub }}</td></tr>
+          <tr><td>Эксплуатационные услуги за {{ i.period|date:"F Y"|lower }}</td><td class="num">{{ i.service_amount|rub }}</td></tr>
+          {% if i.penalty_amount %}<tr><td>Пени за просрочку ({{ i.contract.penalty_pct|num }}% в день)</td><td class="num">{{ i.penalty_amount|rub }}</td></tr>{% endif %}
+        {% endif %}
+      </tbody>
+      <tfoot>
+        <tr><th>Итого</th><th class="num">{{ i.total|rub }}</th></tr>
+        <tr><td>Оплачено</td><td class="num">{{ i.paid_amount|rub }}</td></tr>
+        <tr><th>К оплате</th><th class="num">{{ i.debt|rub }}</th></tr>
+      </tfoot>
+    </table>
+    {% if allocations %}
+      <div class="fw-semibold mb-1">Зачтённые платежи</div>
+      <ul class="small mb-0">{% for a in allocations %}<li>п/п № {{ a.payment.bank_doc_no }} от {{ a.payment.paid_at|date:"d.m.Y" }} — {{ a.amount|rub }}</li>{% endfor %}</ul>
+    {% endif %}
+  </div></div>
+</div></div>
+{% endblock %}

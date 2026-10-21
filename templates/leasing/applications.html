@@ -1,0 +1,59 @@
+{% extends "base.html" %}{% load arenda %}
+{% block title %}Заявки{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-end mb-3 gap-2">
+  <h1 class="h3 page-title mb-0">Очередь заявок</h1>
+  <div class="btn-group btn-group-sm flex-wrap">
+    <a class="btn {% if status == 'active' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="?status=active">В работе</a>
+    {% for value, label in statuses %}
+      <a class="btn {% if status == value %}btn-primary{% else %}btn-outline-primary{% endif %}" href="?status={{ value }}">{{ label }}</a>
+    {% endfor %}
+    <a class="btn {% if status == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="?status=all">Все</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive"><table class="table align-middle mb-0">
+    <thead><tr><th>№</th><th>Арендатор</th><th>Помещение</th><th>Период</th><th>Деятельность</th><th>Бронь до</th><th>Статус</th><th class="text-end">Действия</th></tr></thead>
+    <tbody>
+    {% for a in applications %}
+      <tr>
+        <td>{{ a.pk }}</td>
+        <td>{{ a.tenant.legal_name }}<div class="small text-secondary">ИНН {{ a.tenant.inn }}</div></td>
+        <td><a href="{% url 'catalog:detail' a.premises.pk %}">{{ a.premises.code }}</a><div class="small text-secondary">{{ a.premises.area_m2|num }} м²</div></td>
+        <td>{{ a.lease_from|date:"d.m.Y" }} —<br>{{ a.lease_to|date:"d.m.Y" }}</td>
+        <td>{{ a.activity }}{% if a.comment %}<div class="small text-secondary">{{ a.comment }}</div>{% endif %}</td>
+        <td>{% if a.booking.is_active %}{{ a.booking.expires_at|date:"d.m H:i" }}{% else %}—{% endif %}</td>
+        <td><span class="badge text-bg-{{ a.status|badge }}">{{ a.get_status_display }}</span></td>
+        <td class="text-end">
+          {% if user.role == "manager" or user.role == "admin" or user.is_superuser %}
+            {% if a.status == "pending" %}
+              <form class="d-inline" method="post" action="{% url 'leasing:application_action' a.pk 'approve' %}">{% csrf_token %}
+                <button class="btn btn-sm btn-primary">Одобрить</button></form>
+            {% elif a.status == "approved" %}
+              <form class="d-inline" method="post" action="{% url 'leasing:application_action' a.pk 'contract' %}">{% csrf_token %}
+                <button class="btn btn-sm btn-primary">Сформировать договор</button></form>
+            {% elif a.status == "contracted" and a.contract %}
+              <a class="btn btn-sm btn-outline-primary" href="{% url 'leasing:contract' a.contract.pk %}">Договор</a>
+            {% endif %}
+            {% if a.status == "pending" or a.status == "approved" %}
+              <button class="btn btn-sm btn-outline-danger" type="button" data-bs-toggle="collapse" data-bs-target="#reject-{{ a.pk }}">Отклонить</button>
+            {% endif %}
+          {% endif %}
+        </td>
+      </tr>
+      {% if a.status == "pending" or a.status == "approved" %}
+      <tr class="collapse" id="reject-{{ a.pk }}"><td colspan="8">
+        <form method="post" action="{% url 'leasing:application_action' a.pk 'reject' %}" class="d-flex gap-2">{% csrf_token %}
+          <input class="form-control form-control-sm" name="reason" placeholder="Причина отказа (увидит арендатор)" required>
+          <button class="btn btn-sm btn-danger">Отклонить и снять бронь</button>
+        </form>
+      </td></tr>
+      {% endif %}
+    {% empty %}
+      <tr><td colspan="8" class="text-center text-secondary py-4">Заявок нет.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endblock %}

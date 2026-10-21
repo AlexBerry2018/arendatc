@@ -1,0 +1,30 @@
+{% extends "base.html" %}{% load arenda %}
+{% block title %}Договоры{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-end mb-3 gap-2">
+  <h1 class="h3 page-title mb-0">Договоры аренды</h1>
+  <div class="btn-group btn-group-sm flex-wrap">
+    <a class="btn {% if not status %}btn-primary{% else %}btn-outline-primary{% endif %}" href="?">Все</a>
+    {% for value, label in statuses %}
+      <a class="btn {% if status == value %}btn-primary{% else %}btn-outline-primary{% endif %}" href="?status={{ value }}">{{ label }}</a>
+    {% endfor %}
+  </div>
+</div>
+<div class="card">
+  <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+    <thead><tr><th>Номер</th><th>Арендатор</th><th>Помещение</th><th>Срок</th><th class="num">Аренда в месяц</th><th>Статус</th></tr></thead>
+    <tbody>
+    {% for c in contracts %}
+      <tr>
+        <td><a class="fw-semibold" href="{% url 'leasing:contract' c.pk %}">{{ c.number }}</a></td>
+        <td>{{ c.tenant.legal_name }}</td>
+        <td>{{ c.premises.code }}</td>
+        <td>{{ c.date_from|date:"d.m.Y" }} — {{ c.date_to|date:"d.m.Y" }}</td>
+        <td class="num">{{ c.monthly_rent|rub }}</td>
+        <td><span class="badge text-bg-{{ c.status|badge }}">{{ c.get_status_display }}</span></td>
+      </tr>
+    {% empty %}<tr><td colspan="6" class="text-center text-secondary py-4">Договоров нет.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endblock %}

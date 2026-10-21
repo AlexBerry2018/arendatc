@@ -1,0 +1,40 @@
+{% extends "base.html" %}{% load arenda %}
+{% block title %}Загрузка выписки{% endblock %}
+{% block content %}
+<nav class="small mb-2"><a href="{% url 'finance:home' %}">← Начисления и оплаты</a></nav>
+<h1 class="h3 page-title mb-3">Загрузка банковской выписки</h1>
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="card"><div class="card-body">
+      <form method="post" enctype="multipart/form-data">{% csrf_token %}
+        {% include "_form_fields.html" %}
+        <button class="btn btn-primary">Загрузить и сопоставить</button>
+      </form>
+      <hr>
+      <div class="small">
+        <div class="fw-semibold mb-1">Формат файла</div>
+        <pre class="bg-light p-2 rounded mb-1">дата;инн;сумма;номер;назначение
+05.10.2026;7701001012;150000,00;311;Аренда за октябрь</pre>
+        Кодировка UTF-8 или Windows-1251, разделитель «;» или «,». Повторная загрузка тех же платёжек пропускается.
+        Пример — файл <code>sample_data/statement_example.csv</code> в проекте.
+      </div>
+    </div></div>
+  </div>
+  {% if report %}
+  <div class="col-lg-7">
+    <div class="card"><div class="card-header">Результат</div><div class="card-body">
+      <p>Строк: {{ report.total_rows }} · сопоставлено {{ report.matched|length }} · без арендатора {{ report.unmatched|length }} ·
+        повторы {{ report.duplicates|length }} · ошибки {{ report.errors|length }}</p>
+      {% if report.matched %}<div class="fw-semibold">Сопоставлены</div><ul>
+        {% for m in report.matched %}<li>Строка {{ m.line }}: {{ m.payment.tenant.legal_name }}, {{ m.payment.amount|rub }}{% if m.advance %} (аванс {{ m.advance|rub }}){% endif %}</li>{% endfor %}</ul>{% endif %}
+      {% if report.unmatched %}<div class="fw-semibold">Без арендатора</div><ul>
+        {% for m in report.unmatched %}<li>Строка {{ m.line }}: ИНН {{ m.payment.payer_inn }}, {{ m.payment.amount|rub }} — привяжите вручную на странице начислений</li>{% endfor %}</ul>{% endif %}
+      {% if report.duplicates %}<div class="fw-semibold">Уже загружены</div><ul>
+        {% for m in report.duplicates %}<li>Строка {{ m.line }}: п/п № {{ m.doc_no }}</li>{% endfor %}</ul>{% endif %}
+      {% if report.errors %}<div class="fw-semibold text-danger">Не разобраны</div><ul>
+        {% for m in report.errors %}<li>Строка {{ m.line }}: <code>{{ m.row }}</code></li>{% endfor %}</ul>{% endif %}
+    </div></div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

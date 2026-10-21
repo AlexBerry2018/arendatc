@@ -1,0 +1,61 @@
+{% extends "base.html" %}{% load arenda %}
+{% block title %}Помещение {{ p.code }}{% endblock %}
+{% block content %}
+<nav class="small mb-2"><a href="{% url 'catalog:list' %}?floor={{ p.floor.number }}">← Каталог, {{ p.floor }}</a></nav>
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <h1 class="h3 page-title mb-1">Помещение {{ p.code }}</h1>
+            <div class="text-secondary">{{ p.type }} · {{ p.floor }}</div>
+          </div>
+          <span class="badge fs-6 text-bg-{{ p.status|badge }}">{{ p.get_status_display }}</span>
+        </div>
+        <div class="row g-3 mt-2">
+          <div class="col-sm-4"><div class="kpi"><div class="label">Площадь</div><div class="value">{{ p.area_m2|num }} м²</div></div></div>
+          <div class="col-sm-4"><div class="kpi"><div class="label">Ставка</div><div class="value">{{ p.rate_rub_m2|floatformat:0 }} ₽</div><div class="hint">за м² в месяц</div></div></div>
+          <div class="col-sm-4"><div class="kpi"><div class="label">Аренда в месяц</div><div class="value">{{ p.monthly_rent|floatformat:0 }} ₽</div><div class="hint">без эксплуатационных услуг</div></div></div>
+        </div>
+        {% if p.description %}<p class="mt-3 mb-0">{{ p.description }}</p>{% endif %}
+      </div>
+    </div>
+
+    <div class="card mt-3">
+      <div class="card-header">Занятость</div>
+      <div class="card-body">
+        {% if busy %}
+          <p class="mb-2 small text-secondary">На эти периоды помещение уже сдано или забронировано:</p>
+          <ul class="mb-0">{% for b in busy %}<li>{{ b.from|date:"d.m.Y" }} — {{ b.to|date:"d.m.Y" }}</li>{% endfor %}</ul>
+        {% else %}
+          <p class="mb-0">Броней и договоров на будущие периоды нет.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header">Заявка на аренду</div>
+      <div class="card-body">
+        {% if p.status == "repair" %}
+          <p class="mb-0">Помещение на ремонте, заявки временно не принимаются.</p>
+        {% elif is_tenant %}
+          <form method="post" novalidate>{% csrf_token %}
+            {% include "_form_fields.html" %}
+            <p class="small text-secondary">После подачи заявки помещение бронируется на 5 рабочих дней на время согласования.</p>
+            <button class="btn btn-primary w-100">Подать заявку и забронировать</button>
+          </form>
+        {% elif user.is_authenticated %}
+          <p class="mb-0">Заявки подают арендаторы. Вы вошли как {{ user.get_role_display|lower }}.</p>
+        {% else %}
+          <p>Чтобы подать заявку, войдите или зарегистрируйте организацию.</p>
+          <a class="btn btn-primary" href="{% url 'login' %}?next={{ request.path }}">Войти</a>
+          <a class="btn btn-outline-primary" href="{% url 'register' %}">Регистрация</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

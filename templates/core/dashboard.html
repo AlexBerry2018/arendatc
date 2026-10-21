@@ -1,0 +1,60 @@
+{% extends "base.html" %}{% load arenda %}
+{% block title %}Отчёты{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-end mb-3">
+  <h1 class="h3 page-title mb-0">Сводка по торговому центру</h1>
+  <div class="text-secondary">на {{ today|date:"d.m.Y" }}</div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-md-3"><div class="kpi"><div class="label">Заполняемость</div><div class="value">{{ overall.pct|num }}%</div>
+    <div class="hint">{{ overall.leased|floatformat:0 }} из {{ overall.total|floatformat:0 }} м² сдано</div></div></div>
+  <div class="col-md-3"><div class="kpi"><div class="label">Начислено за {{ revenue.period|date:"F"|lower }}</div><div class="value">{{ revenue.invoiced|rub0 }}</div>
+    <div class="hint">аренда, эксплуатация и пени</div></div></div>
+  <div class="col-md-3"><div class="kpi"><div class="label">Поступило за {{ revenue.period|date:"F"|lower }}</div><div class="value">{{ revenue.collected|rub0 }}</div>
+    <div class="hint">зачтено в счета</div></div></div>
+  <div class="col-md-3"><div class="kpi"><div class="label">В работе</div>
+    <div class="value">{{ pipeline.pending_applications }} · {{ pipeline.contracts_in_approval }} · {{ pipeline.awaiting_signature }}</div>
+    <div class="hint">заявки · на утверждении · ждут подписи</div></div></div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card h-100"><div class="card-header">Заполняемость по этажам</div><div class="card-body">
+      {% for r in floors %}
+        <div class="mb-3">
+          <div class="d-flex justify-content-between small mb-1">
+            <span class="fw-semibold">{{ r.floor }}</span>
+            <span>{{ r.pct|num }}% · {{ r.leased|floatformat:0 }} / {{ r.total|floatformat:0 }} м²</span>
+          </div>
+          <div class="occupancy-bar" role="img" aria-label="Сдано {{ r.pct }}%">
+            <div class="leased" style="width: {% widthratio r.leased r.total 100 %}%"></div>
+            <div class="booked" style="width: {% widthratio r.booked r.total 100 %}%"></div>
+          </div>
+        </div>
+      {% empty %}<p class="text-secondary mb-0">Этажи не заведены.</p>{% endfor %}
+      <div class="legend small"><span><i style="background:var(--app-accent)"></i>сдано</span><span><i style="background:var(--plan-booked)"></i>забронировано</span></div>
+    </div></div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card mb-3"><div class="card-header">Должники (просроченная задолженность)</div>
+      <div class="table-responsive"><table class="table align-middle mb-0">
+        <thead><tr><th>Арендатор</th><th>ИНН</th><th class="num">Долг</th></tr></thead>
+        <tbody>
+        {% for d in debtors %}<tr><td>{{ d.name }}</td><td>{{ d.inn }}</td><td class="num text-danger fw-semibold">{{ d.debt|rub }}</td></tr>
+        {% empty %}<tr><td colspan="3" class="text-secondary">Просроченной задолженности нет.</td></tr>{% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+    <div class="card"><div class="card-header">Договоры, истекающие в ближайшие 60 дней</div>
+      <div class="table-responsive"><table class="table align-middle mb-0">
+        <thead><tr><th>Договор</th><th>Арендатор</th><th>Помещение</th><th>Окончание</th></tr></thead>
+        <tbody>
+        {% for c in expiring %}<tr><td><a href="{% url 'leasing:contract' c.pk %}">{{ c.number }}</a></td><td>{{ c.tenant.legal_name }}</td><td>{{ c.premises.code }}</td><td>{{ c.date_to|date:"d.m.Y" }}</td></tr>
+        {% empty %}<tr><td colspan="4" class="text-secondary">Нет.</td></tr>{% endfor %}
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

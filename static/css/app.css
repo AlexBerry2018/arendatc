@@ -1,0 +1,77 @@
+:root {
+  --app-ink: #1d2733;
+  --app-accent: #0f6b5c;
+  --app-accent-soft: #e3f1ee;
+  --app-surface: #f5f6f4;
+  --plan-free: #2f9e6e;
+  --plan-booked: #e0a526;
+  --plan-leased: #9aa3ad;
+  --plan-repair: #d0533f;
+  --bs-body-color: var(--app-ink);
+  --bs-link-color: var(--app-accent);
+  --bs-link-hover-color: #0a4d42;
+}
+
+body { background: var(--app-surface); }
+
+.app-nav { background: var(--app-ink); }
+.app-nav .navbar-brand, .app-nav .nav-link { color: #f1f4f2; }
+.app-nav .nav-link:hover { color: #9fd8cb; }
+.app-nav .navbar-toggler { border-color: rgba(255,255,255,.3); filter: invert(1); }
+.brand-mark {
+  display: inline-grid; place-items: center; width: 1.8rem; height: 1.8rem;
+  border-radius: .45rem; background: var(--app-accent); color: #fff; font-weight: 700; margin-right: .3rem;
+}
+.nav-user { color: #e7ecea; font-size: .9rem; line-height: 1.1; text-align: right; }
+.nav-user small { display: block; color: #9db0aa; font-size: .75rem; }
+
+.page-title { font-weight: 650; letter-spacing: -.01em; }
+.card { border: 1px solid #e3e6e3; border-radius: .75rem; box-shadow: none; }
+.card-header { background: #fff; font-weight: 600; border-bottom-color: #eceeec; }
+.btn-primary { --bs-btn-bg: var(--app-accent); --bs-btn-border-color: var(--app-accent);
+  --bs-btn-hover-bg: #0a5a4d; --bs-btn-hover-border-color: #0a5a4d; --bs-btn-active-bg: #084a40; }
+.btn-outline-primary { --bs-btn-color: var(--app-accent); --bs-btn-border-color: var(--app-accent);
+  --bs-btn-hover-bg: var(--app-accent); --bs-btn-hover-border-color: var(--app-accent); }
+.table > :not(caption) > * > * { padding: .55rem .65rem; }
+.table thead th { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: #66727d; font-weight: 600; }
+.num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+
+.kpi { background: #fff; border: 1px solid #e3e6e3; border-radius: .75rem; padding: 1rem 1.1rem; height: 100%; }
+.kpi .label { color: #66727d; font-size: .82rem; }
+.kpi .value { font-size: 1.6rem; font-weight: 650; font-variant-numeric: tabular-nums; }
+.kpi .hint { color: #66727d; font-size: .8rem; }
+
+/* План этажа */
+.plan-wrap { background: #fff; border: 1px solid #e3e6e3; border-radius: .75rem; padding: .75rem; }
+.plan svg { width: 100%; height: auto; display: block; }
+.plan .room rect { stroke: #fff; stroke-width: 3; transition: opacity .15s; }
+.plan .room text { fill: #fff; font-size: 15px; font-weight: 600; pointer-events: none; }
+.plan .room text.sub { font-weight: 400; font-size: 12px; }
+.plan .room.free rect { fill: var(--plan-free); }
+.plan .room.booked rect { fill: var(--plan-booked); }
+.plan .room.leased rect { fill: var(--plan-leased); }
+.plan .room.repair rect { fill: var(--plan-repair); }
+.plan .room.dimmed { opacity: .28; }
+.plan a.room { text-decoration: none; }
+.plan a.room:hover rect { opacity: .82; }
+.plan .corridor { fill: #eef0ee; }
+.plan .corridor-label { fill: #8b959e; font-size: 13px; letter-spacing: .2em; }
+.legend span { display: inline-flex; align-items: center; gap: .35rem; margin-right: 1rem; font-size: .85rem; }
+.legend i { width: .9rem; height: .9rem; border-radius: .2rem; display: inline-block; }
+
+.occupancy-bar { height: .55rem; background: #e7ebe8; border-radius: 1rem; overflow: hidden; display: flex; }
+.occupancy-bar .leased { background: var(--app-accent); }
+.occupancy-bar .booked { background: var(--plan-booked); }
+
+.contract-paper { background: #fff; border: 1px solid #e3e6e3; border-radius: .5rem; padding: 2rem 2.5rem;
+  font-family: "Times New Roman", Georgia, serif; font-size: 1rem; line-height: 1.5; }
+.contract-paper h1 { font-size: 1.25rem; text-align: center; }
+.contract-paper h2 { font-size: 1.05rem; margin-top: 1.2rem; }
+.signature-box { border: 1px dashed #b7c4bf; border-radius: .5rem; padding: .6rem .8rem; font-size: .85rem; background: #fbfcfb; }
+.hash { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .75rem; word-break: break-all; color: #55626b; }
+
+@media print {
+  .app-nav, footer, .no-print { display: none !important; }
+  body { background: #fff; }
+  .contract-paper { border: 0; padding: 0; }
+}
